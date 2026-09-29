@@ -245,6 +245,21 @@ and the next agent re-derives it.
 - Flag any change touching auth, permissions, PII, or external data as security-sensitive and say
   so explicitly in the summary.
 
+**The data is not yours.** A datastore holds someone else's work — production, staging, a
+colleague's local copy, a fixture that took a day to build. You cannot see what is in it and you
+cannot undo what you do to it.
+
+- **Destructive operations require approval, every time** (§11): `DROP`, `TRUNCATE`, `DELETE` or
+  `UPDATE` without a `WHERE`, `migrate reset` / `db:reset` / a destructive seed, restoring a dump
+  over live data, removing a volume. **"It is only local" is not an exemption** — you are not the
+  one who finds out what was lost.
+- **Never fabricate data into a datastore.** Mock and fixture data live in tests and fixture files,
+  never written into a store another process or person reads. When reproducing a bug needs data,
+  stand up a separate database — do not overwrite the one holding the evidence.
+- **A blocked path is reported, not routed around.** Data that is missing, unreadable, or
+  inconvenient is a blocker to state, not a gap to fill with invented rows. Inventing them destroys
+  the one artifact that showed what was actually wrong, and the loss is silent.
+
 ---
 
 ## §9. Communication
@@ -317,6 +332,7 @@ Never performed automatically. Propose → wait → proceed.
 | Installing a new dependency | Supply chain and bundle size |
 | Changing a public API contract | Breaking change |
 | Running database migrations | Schema changes are permanent |
+| Truncating, dropping, or reseeding any datastore | Irreversible, and "it was only local" cannot be checked after the fact (§8) |
 | Deploying to any environment | Production impact |
 | Writing a `docs/MEMORY.md` entry — except `## Discarded` | An unreviewed entry is an assertion nobody checked. A `## Discarded` entry is an observed fact and is written on the spot, with its evidence (§12) |
 | Writing a `docs/adr/` record | The decision is the user's; the record only states it (§12) |

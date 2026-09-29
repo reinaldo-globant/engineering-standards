@@ -31,6 +31,7 @@ Skipping a step is not verifying, it is asserting.
 | Subagent completed | The diff shows the changes | The agent reported success |
 | Requirements met | Line-by-line pass over the request | The test suite is green |
 | Deployed | The service answering, on the new version | The pipeline turned green |
+| Anything, on data you altered | The alteration stated alongside the claim | A green run against rows you inserted or reset |
 
 ## Red flags — stop and run the command
 
@@ -38,6 +39,20 @@ Skipping a step is not verifying, it is asserting.
 push, or open a PR unverified · trusting a subagent's success report · partial verification
 extrapolated to the whole · "just this once" · being tired and wanting the task over · any wording
 that implies success without evidence behind it.
+
+## Provenance of evidence
+
+Evidence is only evidence if you did not manufacture it. A suite that passes against rows you
+inserted, a store you reset, or a fixture you rewrote proves that you can write rows. It does not
+prove the code works.
+
+When verification touched the data in any way, the claim carries that fact: what you changed, when,
+and why. A success report that omits it is not an optimistic summary, it is a false one — and
+unlike a wrong number, the reader has no way to detect the substitution afterwards. That
+undetectability is what makes it the most damaging failure in this document.
+
+If the honest report is "I could not verify this without altering the data," then that is the
+report. Say it and stop.
 
 ## Reporting honestly
 

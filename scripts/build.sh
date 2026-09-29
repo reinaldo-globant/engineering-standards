@@ -112,6 +112,9 @@ done
 grep -qF 'docs/adr/' "$OUT/engineering-standards.mdc" || { echo "FAIL: ADR not wired into the Cursor baseline" >&2; exit 1; }
 grep -qF 'docs/adr/' "$GH/copilot-instructions.md" || { echo "FAIL: ADR not wired into the Copilot baseline" >&2; exit 1; }
 grep -qF '## Discarded' "$OUT/engineering-standards.mdc" || { echo "FAIL: discard log not wired into the Cursor baseline" >&2; exit 1; }
+grep -qF 'The data is not yours' "$OUT/engineering-standards.mdc" || { echo "FAIL: data-integrity rule missing from the Cursor baseline" >&2; exit 1; }
+grep -qF 'The data is not yours' "$GH/copilot-instructions.md" || { echo "FAIL: data-integrity rule missing from the Copilot baseline" >&2; exit 1; }
+grep -q '^## Provenance of evidence' "$OUT/engineering-workflows.mdc" || { echo "FAIL: evidence-provenance rule missing from the workflows" >&2; exit 1; }
 for f in "$OUT/engineering-workflows.mdc" "$GH/instructions/engineering-workflows.instructions.md"; do
   grep -q "^# Clean Architecture" "$f" || { echo "FAIL: references not concatenated into $f" >&2; exit 1; }
   grep -q "^## docs/adr/" "$f" || { echo "FAIL: ADR section missing from $f" >&2; exit 1; }
