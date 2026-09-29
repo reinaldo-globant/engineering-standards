@@ -620,7 +620,23 @@ ticket #4471.
 Tried it, reverted. The invoice and subscription aggregates share a transaction boundary; the
 split forced a distributed transaction for the common path. Revisit only if billing needs to
 scale independently.
+
+## Discarded
+
+<!-- Append-only. Never pruned, however irrelevant it looks — its value is that nobody remembers it. -->
+
+### 2026-09-28 — `asyncio.to_thread` for the CSV parser
+Worse than the synchronous code: the GIL is not released during the read. Measured 1.4x slower,
+12.1s vs 8.6s on the 400k-row fixture.
+**Reconsider if:** the parser is swapped for one that releases the GIL (polars, pyarrow).
 ```
+
+`## Discarded` has three mandatory parts: what was tried · why it failed, with evidence · the
+condition that reopens it.
+
+`Reconsider if:` is not optional. A discard with no reopening condition reads as dogma and blocks
+legitimate work two years later. When the condition genuinely does not exist, the entry says
+`Reconsider if: never — [the structural reason]`.
 
 **Goes in:** decisions and the *why* behind them · constraints imposed from outside (a vendor's
 behavior, a regulation, a hardware limit, another team's timeline) · traps that cost someone hours
@@ -630,12 +646,20 @@ behavior, a regulation, a hardware limit, another team's timeline) · traps that
 ARCHITECTURE.md · session narration ("today we refactored the parser"). Derivable content is
 duplication, and duplication goes stale and starts lying.
 
-**Writing rule:** propose the entry, get approval, then write. An entry the user has not seen is an
-assertion nobody checked. Delete entries that turn out to be wrong — a wrong memory is worse than
-a missing one.
+**Writing rule — asymmetric.** A memory entry is proposed, approved, then written: it is a
+judgement about the project, and that judgement is the user's. A `## Discarded` entry is written
+**on the spot, without asking** — it is an observed fact, and the moment an attempt fails is
+precisely the moment nobody stops to request permission. What replaces the gate is evidence: the
+error message, the measured number, the failing test. No evidence, no entry. "It didn't work" is
+an opinion, and an opinion filed as fact poisons the file for every session after it. Delete
+entries that turn out to be wrong — a wrong memory is worse than a missing one.
 
 **Sizing rule:** if an entry is still true but no longer relevant to anything in the repo, it goes.
 This file is read at the start of every session; every line in it costs attention forever.
+
+**`## Discarded` is exempt and append-only.** A discarded attempt is irrelevant right up until
+somebody tries it again — being forgotten is its entire job. Pruning it deletes the one thing that
+stops the repeat.
 
 ## The registry
 
