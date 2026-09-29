@@ -12,7 +12,8 @@ OUT="$ROOT/.cursor/rules"
 GH="$ROOT/.github"
 mkdir -p "$OUT" "$GH/instructions"
 
-strip_frontmatter() { sed '1{/^---$/!q}; 1,/^---$/d' "$1"; }
+# -e split: BSD sed (macOS) rejects `q` inside a one-line block; GNU sed accepts both forms.
+strip_frontmatter() { sed -e '1{' -e '/^---$/!q' -e '}' -e '1,/^---$/d' "$1"; }
 
 {
   cat <<'HDR'
