@@ -7,8 +7,12 @@ writing any code. It is non-negotiable: three iron laws (root cause before fix, 
 production code, fresh evidence before any completion claim), a right-sizing gate, and a YAGNI
 ladder.
 
-Before touching code in this repository, read `docs/ARCHITECTURE.md` and `docs/MEMORY.md` if they
-exist. A change that alters the structure updates `docs/ARCHITECTURE.md` in the same diff.
+Before touching code in this repository, read `docs/ARCHITECTURE.md`, `docs/adr/` and
+`docs/MEMORY.md` if they exist. A change that alters the structure updates `docs/ARCHITECTURE.md`
+in the same diff. A decision that closed off a viable alternative gets an ADR in `docs/adr/`, never
+edited once written. An attempt that was executed and failed gets appended to the `## Discarded`
+section of `docs/MEMORY.md` immediately, with its evidence — that section is append-only and is
+what stops the same dead end from being tried again.
 
 Operational detail lives in `.claude/skills/engineering-standards/references/`:
 
@@ -21,4 +25,4 @@ Operational detail lives in `.claude/skills/engineering-standards/references/`:
 | `code-review.md` | Requesting or receiving review of a diff |
 | `delegation.md` | Dispatching subagents or working in parallel branches |
 | `architecture.md` | Designing a core-tier module |
-| `repo-memory.md` | Entering a repository, or recording a decision worth keeping |
+| `repo-memory.md` | Entering a repository, writing an ADR, or recording a dead end worth keeping |
