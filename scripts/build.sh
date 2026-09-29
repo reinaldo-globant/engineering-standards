@@ -106,6 +106,7 @@ for needle in "NO FIX WITHOUT ROOT CAUSE" "NO PRODUCTION CODE WITHOUT A FAILING 
 done
 for f in "$OUT/engineering-workflows.mdc" "$GH/instructions/engineering-workflows.instructions.md"; do
   grep -q "^# Clean Architecture" "$f" || { echo "FAIL: references not concatenated into $f" >&2; exit 1; }
+  grep -q "^## docs/adr/" "$f" || { echo "FAIL: ADR section missing from $f" >&2; exit 1; }
 done
 grep -q '\.claude/skills/engineering-standards/references/debugging\.md' "$GH/copilot-instructions.md" \
   || { echo "FAIL: reference paths not rewritten for Copilot" >&2; exit 1; }

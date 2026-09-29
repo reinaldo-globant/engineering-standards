@@ -1,6 +1,6 @@
-# Repository Context: ARCHITECTURE.md, MEMORY.md, and the Registry
+# Repository Context: ARCHITECTURE.md, ADRs, MEMORY.md, and the Registry
 
-Context that lives only in a chat session dies with it. These three files are how a repository
+Context that lives only in a chat session dies with it. These four artifacts are how a repository
 keeps what it learned, in a form the next person — or the next agent, in any IDE — can read.
 
 ## Entering a repository
@@ -8,8 +8,9 @@ keeps what it learned, in a form the next person — or the next agent, in any I
 ```
 1. Does docs/ARCHITECTURE.md exist?  → read it before reading code
 2. Does docs/MEMORY.md exist?        → read it before proposing anything
-3. Is this repo in the registry?     → if not, add the row (first session only)
-4. Neither doc exists?               → offer to bootstrap. Do not create them silently
+3. Does docs/adr/ exist?             → read it before proposing architecture
+4. Is this repo in the registry?     → if not, add the row (first session only)
+5. None of them exists?              → offer to bootstrap. Do not create them silently
 ```
 
 Do not bootstrap a throwaway-tier repo (§2). A one-week spike does not need an architecture
@@ -57,6 +58,57 @@ Deliberate shortcuts with their marked ceiling and upgrade path (§2).
 **Update rule:** a change that alters the structure updates this file **in the same diff** as the
 code. Not in a follow-up commit, not in a cleanup ticket. A structural change whose architecture
 doc update is deferred is an undocumented change.
+
+## docs/adr/
+
+One file per decision, named `NNNN-slug.md`, numbered from `0001`. The unit is a decision that
+**closed off a viable alternative** — not every choice, only the ones where something lost.
+
+The tier (§2) sets the bar:
+
+| Tier | An ADR is written when |
+|---|---|
+| Core | Any fork in the DECIDE step: more than one viable option was evaluated and one won |
+| Evolving | Only when the decision also forces a change to ARCHITECTURE.md |
+| Throwaway | Never. It does not get a `docs/` either |
+
+```markdown
+# 0002 — Postgres over Mongo for the catalogue
+Status: Accepted
+Date: 2026-09-28
+
+## Context
+The constraint that forced the decision. One or two sentences.
+
+## Decision
+What is done. Present tense, imperative.
+
+## Rejected alternatives
+- **Mongo** — the catalogue queries are relational in 4 of 5 cases; spiked it, 3 joins ended up
+  in the application layer.
+- **DynamoDB** — read cost x8 at the projected volume.
+
+## Consequences
+What this makes easy, and what it makes expensive.
+```
+
+`Status` has exactly two values: `Accepted`, or `Superseded by NNNN`. There is no `Proposed` — an
+ADR is written once the decision is made, not while it is being argued.
+
+**Immutability:** an ADR is never edited and never deleted. A reversed decision marks the old file
+`Superseded by NNNN` and a new one explains why. That trail is the product: when the next agent
+proposes Mongo, `0002` is there with the measurement that killed it.
+
+**Where it comes from:** the `Decision required: / Option A / Option B / Recommendation` block the
+design decision protocol (§6) already requires **is** the ADR draft. Once the user answers the
+fork, that text becomes the file — the losing option moves to `## Rejected alternatives` with the
+reason it lost. There is no extra work here; today that deliberation is thrown away when the
+session closes, and re-deriving it is exactly the drift this prevents.
+
+**ADR or MEMORY entry?** An ADR records a decision *made* between options weighed on paper. The
+`## Discarded` section of MEMORY.md records an attempt *executed* that failed. Code written and
+reverted is a discard. Options compared and one picked is an ADR. One fork can produce both — the
+ADR then cites the discard by its date.
 
 ## docs/MEMORY.md
 
