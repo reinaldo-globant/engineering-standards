@@ -597,6 +597,127 @@ git commit -m "feat(build): reference docs/adr/ and ## Discarded from AGENTS.md;
 
 ---
 
+### Task 5: Data-integrity rule — destruction, fabrication, and evidence provenance
+
+Added after the plan's original four tasks, at the user's request. It is a separate concern from
+ADR/`## Discarded` and shares only the files, so it runs last to keep Tasks 1-4's line anchors valid.
+
+**The three failures it closes**, none of which the baseline currently names:
+
+1. **Destruction** — an agent drops, truncates, or resets a datastore.
+2. **Fabrication** — an agent replaces real data with mock data.
+3. **Concealment** — an agent reports success on evidence produced by 1 or 2. This is the one that
+   matters most: the other two are damage, this one is damage the reader cannot detect afterwards.
+
+**Files:**
+- Modify: `skills/engineering-standards/SKILL.md` — §8 Security Baseline (new block), §11 table (new row)
+- Modify: `skills/engineering-standards/references/verification.md` — new table row, new `## Provenance of evidence` section
+- Modify: `scripts/build.sh` — two generation checks
+
+**Interfaces:**
+- Consumes: nothing from Tasks 1-4. Independent content in the same files.
+- Produces: the literal strings `The data is not yours` (baseline artifacts) and `## Provenance of evidence` (workflow artifacts), which its own checks grep for.
+
+- [ ] **Step 1: Write the failing checks**
+
+In `scripts/build.sh`, immediately after the ADR/discard needle block added in Task 3, add:
+
+```bash
+grep -qF 'The data is not yours' "$OUT/engineering-standards.mdc" || { echo "FAIL: data-integrity rule missing from the Cursor baseline" >&2; exit 1; }
+grep -qF 'The data is not yours' "$GH/copilot-instructions.md" || { echo "FAIL: data-integrity rule missing from the Copilot baseline" >&2; exit 1; }
+grep -q '^## Provenance of evidence' "$OUT/engineering-workflows.mdc" || { echo "FAIL: evidence-provenance rule missing from the workflows" >&2; exit 1; }
+```
+
+- [ ] **Step 2: Run the build to verify it fails**
+
+Run: `./scripts/build.sh`
+
+Expected: FAIL with `FAIL: data-integrity rule missing from the Cursor baseline`, exit code 1.
+
+- [ ] **Step 3: Add the §8 block**
+
+In `skills/engineering-standards/SKILL.md` §8, after the final bullet (`Flag any change touching auth, permissions, PII, or external data as security-sensitive and say so explicitly in the summary.`) and before the `---` that closes the section, insert a blank line then:
+
+```markdown
+**The data is not yours.** A datastore holds someone else's work — production, staging, a
+colleague's local copy, a fixture that took a day to build. You cannot see what is in it and you
+cannot undo what you do to it.
+
+- **Destructive operations require approval, every time** (§11): `DROP`, `TRUNCATE`, `DELETE` or
+  `UPDATE` without a `WHERE`, `migrate reset` / `db:reset` / a destructive seed, restoring a dump
+  over live data, removing a volume. **"It is only local" is not an exemption** — you are not the
+  one who finds out what was lost.
+- **Never fabricate data into a datastore.** Mock and fixture data live in tests and fixture files,
+  never written into a store another process or person reads. When reproducing a bug needs data,
+  stand up a separate database — do not overwrite the one holding the evidence.
+- **A blocked path is reported, not routed around.** Data that is missing, unreadable, or
+  inconvenient is a blocker to state, not a gap to fill with invented rows. Inventing them destroys
+  the one artifact that showed what was actually wrong, and the loss is silent.
+```
+
+- [ ] **Step 4: Add the §11 approval-gate row**
+
+In the §11 table, immediately after the row `| Running database migrations | Schema changes are permanent |`, insert:
+
+```markdown
+| Truncating, dropping, or reseeding any datastore | Irreversible, and "it was only local" cannot be checked after the fact (§8) |
+```
+
+- [ ] **Step 5: Add the verification.md table row**
+
+In `skills/engineering-standards/references/verification.md`, in the `## What each claim requires` table, after the row `| Deployed | The service answering, on the new version | The pipeline turned green |`, insert:
+
+```markdown
+| Anything, on data you altered | The alteration stated alongside the claim | A green run against rows you inserted or reset |
+```
+
+- [ ] **Step 6: Add the `## Provenance of evidence` section**
+
+In `skills/engineering-standards/references/verification.md`, insert this section between `## Red flags — stop and run the command` and `## Reporting honestly`:
+
+```markdown
+## Provenance of evidence
+
+Evidence is only evidence if you did not manufacture it. A suite that passes against rows you
+inserted, a store you reset, or a fixture you rewrote proves that you can write rows. It does not
+prove the code works.
+
+When verification touched the data in any way, the claim carries that fact: what you changed, when,
+and why. A success report that omits it is not an optimistic summary, it is a false one — and
+unlike a wrong number, the reader has no way to detect the substitution afterwards. That
+undetectability is what makes it the most damaging failure in this document.
+
+If the honest report is "I could not verify this without altering the data," then that is the
+report. Say it and stop.
+```
+
+- [ ] **Step 7: Run the build to verify it passes**
+
+Run: `./scripts/build.sh`
+
+Expected: PASS, final line starts with `ok: cursor `.
+
+- [ ] **Step 8: Verify the rule reached every artifact that must carry it**
+
+Run: `grep -rlF 'The data is not yours' .cursor .github && grep -rl '^## Provenance of evidence' .cursor .github`
+
+Expected: the first command lists `.cursor/rules/engineering-standards.mdc` and `.github/copilot-instructions.md`; the second lists `.cursor/rules/engineering-workflows.mdc` and `.github/instructions/engineering-workflows.instructions.md`.
+
+- [ ] **Step 9: Verify §11 and §8 agree**
+
+Run: `grep -n 'reseeding any datastore\|The data is not yours' .cursor/rules/engineering-standards.mdc`
+
+Expected: two lines, the §8 block and the §11 row, each cross-referencing the other's section number.
+
+- [ ] **Step 10: Commit** (ask first — §11)
+
+```bash
+git add skills/engineering-standards/SKILL.md skills/engineering-standards/references/verification.md scripts/build.sh .cursor .github AGENTS.md
+git commit -m "feat(skill): forbid destructive data ops, fabricated data, and unprovenanced evidence"
+```
+
+---
+
 ## Out of scope
 
 Deliberately not built, each with the condition that would trigger it:
