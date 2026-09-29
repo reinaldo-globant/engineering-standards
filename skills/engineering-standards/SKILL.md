@@ -38,7 +38,7 @@ silently.
 ### Order of operations for any non-trivial task
 
 ```
-CONTEXT     read docs/ARCHITECTURE.md and docs/MEMORY.md if the repo has them (§12)
+CONTEXT     read docs/ARCHITECTURE.md, docs/adr/ and docs/MEMORY.md if the repo has them (§12)
    ↓
 UNDERSTAND  read the code the change touches, trace the real flow end to end
    ↓
@@ -55,7 +55,8 @@ BUILD       RED → GREEN → REFACTOR
 VERIFY      run the command, read the output, then claim
    ↓
 RECORD      structural change → update ARCHITECTURE.md in the same diff.
-            Non-derivable decision → propose a MEMORY.md entry (§12)
+            decision that closed a fork → write an ADR (§12).
+            attempt tried and abandoned → append to MEMORY.md ## Discarded, now (§12)
 ```
 
 Laziness shortens the *solution*, never the *reading*. A minimal diff in the wrong place is not
@@ -215,6 +216,11 @@ Recommendation: [A or B] because [reason]. Which fits your context?
 Always give a recommendation — a survey without a position is not help. Do not proceed past the
 decision without an answer.
 
+Once the fork is answered, this block **is** the ADR draft (§12): the chosen option becomes
+`## Decision`, the losing one becomes an entry under `## Rejected alternatives` with the reason it
+lost. In a core-tier repo that record is written; otherwise the deliberation dies with the session
+and the next agent re-derives it.
+
 ---
 
 ## §7. Error Handling
@@ -312,26 +318,31 @@ Never performed automatically. Propose → wait → proceed.
 | Changing a public API contract | Breaking change |
 | Running database migrations | Schema changes are permanent |
 | Deploying to any environment | Production impact |
-| Writing a `docs/MEMORY.md` entry | An unreviewed entry is an assertion nobody checked (§12) |
+| Writing a `docs/MEMORY.md` entry — except `## Discarded` | An unreviewed entry is an assertion nobody checked. A `## Discarded` entry is an observed fact and is written on the spot, with its evidence (§12) |
+| Writing a `docs/adr/` record | The decision is the user's; the record only states it (§12) |
 | Bootstrapping `docs/ARCHITECTURE.md` in an existing repo | The repo may already document this elsewhere |
 
 ---
 
 ## §12. Repository Context & Memory
 
-Every repository carries its own context in two versioned files. They are read **before** the code
-and updated **with** the code — never "later".
+Every repository carries its own context in three versioned artifacts. They are read **before** the
+code and updated **with** the code — never "later".
 
 | File | What it is | Rule |
 |---|---|---|
 | `docs/ARCHITECTURE.md` | The structure as it **is**, not as it was intended: module map, boundaries, entry points, data flow, external dependencies, how to run and test it | A change that alters the structure updates this file **in the same diff**. A stale architecture doc is worse than none |
-| `docs/MEMORY.md` | Only what the code and the git history cannot tell you: decisions and their *why*, constraints imposed from outside, traps, dead ends already tried and rejected | Dated entries, one fact each. Proposed by you, approved by the user before writing |
+| `docs/adr/` | One file per decision that closed off a viable alternative: context, decision, the rejected alternatives with the reason each lost, consequences | `NNNN-slug.md` from 0001. Never edited, never deleted — a reversed decision marks the old record `Superseded by NNNN`. Core tier: every fork. Evolving: only structural ones. Throwaway: none |
+| `docs/MEMORY.md` | Only what the code and the git history cannot tell you: decisions and their *why*, constraints imposed from outside, traps. Its `## Discarded` section holds attempts that were executed and failed | Dated entries, one fact each. Proposed, approved, then written — except `## Discarded`, which is append-only, written immediately, and requires evidence instead of approval |
 
 **Entering a repository:**
-1. Both files exist → read them before touching code. They outrank your assumptions about the repo.
+1. They exist → read them before touching code. They outrank your assumptions about the repo.
+   `docs/adr/` is read before proposing anything architectural, and `## Discarded` before
+   proposing anything that looks like a retry.
 2. Missing → offer to bootstrap them. Don't create them silently, and don't create them in a
    throwaway-tier repo that will not outlive the week.
-3. Contradicted by the code → the code wins; say so and propose the correction.
+3. Contradicted by the code → the code wins; say so and propose the correction. An ADR is the one
+   exception: it is not deleted when overtaken, it is marked `Superseded by NNNN`.
 
 **What never goes in MEMORY.md:** what the code already states · what `git log` already records ·
 what belongs in ARCHITECTURE.md · session narration ("today we refactored X"). If it is derivable,

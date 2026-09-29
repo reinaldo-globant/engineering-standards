@@ -104,6 +104,10 @@ for needle in "NO FIX WITHOUT ROOT CAUSE" "NO PRODUCTION CODE WITHOUT A FAILING 
   grep -qF "$needle" "$OUT"/*.mdc || { echo "FAIL: missing '$needle' in Cursor rules" >&2; exit 1; }
   grep -qrF "$needle" "$GH" || { echo "FAIL: missing '$needle' in Copilot instructions" >&2; exit 1; }
 done
+# the baseline must carry the ADR + discard wiring, not only the reference file
+grep -qF 'docs/adr/' "$OUT/engineering-standards.mdc" || { echo "FAIL: ADR not wired into the Cursor baseline" >&2; exit 1; }
+grep -qF 'docs/adr/' "$GH/copilot-instructions.md" || { echo "FAIL: ADR not wired into the Copilot baseline" >&2; exit 1; }
+grep -qF '## Discarded' "$OUT/engineering-standards.mdc" || { echo "FAIL: discard log not wired into the Cursor baseline" >&2; exit 1; }
 for f in "$OUT/engineering-workflows.mdc" "$GH/instructions/engineering-workflows.instructions.md"; do
   grep -q "^# Clean Architecture" "$f" || { echo "FAIL: references not concatenated into $f" >&2; exit 1; }
   grep -q "^## docs/adr/" "$f" || { echo "FAIL: ADR section missing from $f" >&2; exit 1; }
