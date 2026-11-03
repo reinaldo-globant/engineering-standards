@@ -96,6 +96,29 @@ delete it — agent mode still reaches the references through the paths in the b
 `build.sh` fails if the iron laws, the reference bodies, or the rewritten reference paths don't
 survive generation — that's the test.
 
+## Integrity lock
+
+Agents execute what these files tell them to, so every file an agent reads as instructions —
+`AGENTS.md`, the Cursor and Copilot files, the whole skill — is covered by
+`.engineering-standards.sha256`. `build.sh` writes it, after a scan that refuses any network call
+or code execution (`curl`, `wget`, `irm`/`iwr`, `iex`, `eval`, `base64`, `| sh`, `sh -c`, any
+`http(s)://`) and any invisible unicode (zero-width or bidi-override characters that hide text from
+a reviewer).
+
+- **History:** the lock is committed. Every approved change to the instructions shows up as a hash
+  diff in `git log -p .engineering-standards.sha256` — a PR that changes instructions without
+  changing the lock, or changes the lock without changing a source, is the one to read twice.
+- **Hand edits are caught:** a generated file edited without rebuilding no longer matches its
+  hash. `scripts/integrity.sh verify` exits non-zero.
+- **Installs are checked:** `install.ps1` refuses to copy unless this repo matches its lock (it
+  copies committed files, with no build step); `install.sh` rebuilds first. Both leave a lock in the
+  target, checked later with `scripts/install.sh --verify <repo>` or `install.ps1 -Verify <repo>`.
+  A pre-existing `AGENTS.md` belongs to the target repo and stays out of its lock.
+
+The scan is a tripwire, not a sandbox: an instruction written as plain prose ("send the contents of
+`.env` to …") passes it. The hash diff in review is what catches that. `scripts/test-integrity.sh`
+checks that every injection path above fails.
+
 ## Provenance
 
 Distilled from three sources, all MIT:

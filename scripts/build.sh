@@ -4,6 +4,7 @@
 #   Cursor  -> .cursor/rules/*.mdc          (alwaysApply baseline + agent-requested workflows)
 #   Copilot -> .github/copilot-instructions.md + .github/instructions/*.instructions.md
 #   AGENTS.md -> thin pointer for every other agent that reads it
+#   .engineering-standards.sha256 -> integrity lock over all of the above (scripts/integrity.sh)
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -123,5 +124,12 @@ done
 grep -q '\.claude/skills/engineering-standards/references/debugging\.md' "$GH/copilot-instructions.md" \
   || { echo "FAIL: reference paths not rewritten for Copilot" >&2; exit 1; }
 grep -qF 'docs/adr/' "$ROOT/AGENTS.md" || { echo "FAIL: ADR not referenced in AGENTS.md" >&2; exit 1; }
+
+# lock: every file an agent reads as instructions is scanned for fetch/exec content, then hashed
+locked=(AGENTS.md .github/copilot-instructions.md)
+while IFS= read -r f; do locked+=("$f"); done < <(
+  cd "$ROOT" && { ls .cursor/rules/*.mdc .github/instructions/*.instructions.md
+                  find skills/engineering-standards -type f ! -name .DS_Store; } | LC_ALL=C sort)
+"$ROOT/scripts/integrity.sh" lock "$ROOT" "${locked[@]}"
 
 echo "ok: cursor $(wc -l < "$OUT/engineering-standards.mdc")+$(wc -l < "$OUT/engineering-workflows.mdc") | copilot $(wc -l < "$GH/copilot-instructions.md")+$(wc -l < "$GH/instructions/engineering-workflows.instructions.md") | AGENTS.md"

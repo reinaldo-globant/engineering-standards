@@ -6,3 +6,8 @@
 # Windows scripts must keep CRLF.
 *.ps1 text eol=crlf
 *.cmd text eol=crlf
+
+# Agent instruction files and their lock are hashed: a CRLF checkout must not change a single byte.
+*.md text eol=lf
+*.mdc text eol=lf
+.engineering-standards.sha256 text eol=lf
