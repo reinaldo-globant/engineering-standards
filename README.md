@@ -43,6 +43,7 @@ the whole thing is plain Markdown in a repo, copied in by a script.
 
 ```bash
 ./scripts/install.sh                 # user-wide Claude Code skill (~/.claude/skills)
+./scripts/install.sh --cursor        # user-wide Cursor skill (~/.cursor/skills)
 ./scripts/install.sh /path/to/repo   # into a project, all targets at once
 ```
 
@@ -50,6 +51,7 @@ the whole thing is plain Markdown in a repo, copied in by a script.
 
 ```powershell
 .\scripts\install.ps1
+.\scripts\install.ps1 -Cursor
 .\scripts\install.ps1 C:\src\my-project
 ```
 
@@ -57,6 +59,7 @@ the whole thing is plain Markdown in a repo, copied in by a script.
 
 ```bat
 scripts\install.cmd
+scripts\install.cmd -Cursor
 scripts\install.cmd C:\src\my-project
 ```
 
@@ -66,6 +69,56 @@ machine setting.
 
 Into a project it writes `.claude/skills/`, `.cursor/rules/`, `.github/` and `AGENTS.md`
 (the last one only if the repo doesn't already have one — otherwise merge by hand).
+
+### Cursor
+
+Cursor has two install levels, and they are not equivalent:
+
+| Level | Command | Where | Applies |
+|---|---|---|---|
+| Every project | `./scripts/install.sh --cursor`<br>`.\scripts\install.ps1 -Cursor` | `~/.cursor/skills/engineering-standards/` | As a **skill**: the agent loads it when its description matches the request |
+| One project | `./scripts/install.sh /path/to/repo`<br>`.\scripts\install.ps1 C:\src\my-project` | `.cursor/rules/` in that repo | As a **rule**: `engineering-standards.mdc` is `alwaysApply`, on every request |
+
+Cursor reads rules only from the project. There is no user-wide rules folder, so the global install
+can only be the skill. Use both: the skill gives you the baseline in any repo, and the rule
+enforces it on every request in the repos where it must not be skipped.
+
+```bash
+./scripts/install.sh --verify ~/.cursor/skills/engineering-standards  # later: nothing was tampered with
+./scripts/install.sh --verify /path/to/repo
+```
+
+To check the global install, ask the agent in any project which skills it has available.
+`engineering-standards` should be listed.
+
+The project install puts two rules in `/path/to/repo/.cursor/rules/`:
+
+| Rule | Type | When Cursor uses it |
+|---|---|---|
+| `engineering-standards.mdc` | Always | Every chat and agent request |
+| `engineering-workflows.mdc` | Agent Requested | When the agent decides its description matches: debugging, tests, verification, planning, review |
+
+Cursor also reads the `AGENTS.md` at the repo root.
+
+To check it worked, reopen the project, go to **Cursor Settings → Rules**, and confirm both rules
+show up under *Project Rules*. Then ask the agent which rules it has loaded.
+`engineering-standards` should be listed.
+
+Commit `.cursor/rules/` and `.engineering-standards.sha256` so everyone who opens the repo gets the
+same rules and the same lock.
+
+**Cursor only, without the Claude Code and Copilot files:** copy the two rules by hand. A manual
+copy leaves no lock in the target, so `--verify` cannot check it.
+
+```bash
+mkdir -p /path/to/repo/.cursor/rules
+cp .cursor/rules/*.mdc /path/to/repo/.cursor/rules/
+```
+
+**Always-on across every project:** the only way is *User Rules* (Cursor Settings → Rules), which
+are plain text with no `alwaysApply` and no description. Pasting `engineering-standards.mdc` there,
+without its frontmatter, works, but it stops tracking this repo: re-paste after every update, and
+no lock covers it.
 
 The generated files are committed, so **installing never needs a build.** Regenerating them after
 editing `skills/engineering-standards/` needs bash: `./scripts/build.sh`, from Git Bash or WSL on

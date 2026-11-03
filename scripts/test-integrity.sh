@@ -52,4 +52,9 @@ pass "$TMP/repo/scripts/install.sh" "$TMP/target2"
 ! grep -q ' AGENTS.md$' "$TMP/target2/$LOCK" || { echo "FAIL: foreign AGENTS.md was locked" >&2; exit 1; }
 pass "$TMP/repo/scripts/install.sh" --verify "$TMP/target2"
 
+# --cursor installs the skill user-wide for Cursor, locked like every other install
+pass env CURSOR_HOME="$TMP/cursor" "$TMP/repo/scripts/install.sh" --cursor
+[ -s "$TMP/cursor/skills/engineering-standards/SKILL.md" ] || { echo "FAIL: --cursor did not install the skill" >&2; exit 1; }
+pass "$TMP/repo/scripts/install.sh" --verify "$TMP/cursor/skills/engineering-standards"
+
 echo "ok: integrity"

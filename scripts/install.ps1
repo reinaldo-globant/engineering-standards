@@ -6,6 +6,7 @@
     No argument : installs the Claude Code skill user-wide (%USERPROFILE%\.claude\skills).
     With a path : copies every target into that repository — .cursor\rules\, .github\,
                   .claude\skills\ and AGENTS.md.
+    -Cursor     : installs the skill for Cursor, user-wide (%USERPROFILE%\.cursor\skills).
     -Verify     : checks an install against the lock it left behind.
 
     Nothing is copied unless every file matches this repo's .engineering-standards.sha256 and
@@ -19,13 +20,16 @@
 .EXAMPLE
     .\scripts\install.ps1 C:\src\my-project
 .EXAMPLE
+    .\scripts\install.ps1 -Cursor
+.EXAMPLE
     .\scripts\install.ps1 -Verify C:\src\my-project
 #>
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
     [string] $TargetRepo,
-    [switch] $Verify
+    [switch] $Verify,
+    [switch] $Cursor
 )
 
 $ErrorActionPreference = 'Stop'
@@ -103,10 +107,16 @@ function Copy-Skill {
     return $dest
 }
 
-if (-not $TargetRepo) {
-    $claudeHome = $env:CLAUDE_HOME
-    if (-not $claudeHome) { $claudeHome = Join-Path $env:USERPROFILE '.claude' }
-    $dest = Copy-Skill (Join-Path $claudeHome 'skills')
+if ($Cursor) {
+    $userHome = $env:CURSOR_HOME
+    if (-not $userHome) { $userHome = Join-Path $env:USERPROFILE '.cursor' }
+} else {
+    $userHome = $env:CLAUDE_HOME
+    if (-not $userHome) { $userHome = Join-Path $env:USERPROFILE '.claude' }
+}
+
+if ($Cursor -or -not $TargetRepo) {
+    $dest = Copy-Skill (Join-Path $userHome 'skills')
     Write-Lock $dest @(Get-SkillFiles $dest '.')
     Write-Host "installed skill -> $dest"
     exit 0

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # install.sh [target-repo]
 #   no arg           -> installs the skill for Claude Code, user-wide (~/.claude/skills)
+#   --cursor         -> installs the skill for Cursor, user-wide (~/.cursor/skills)
 #   arg              -> copies Cursor rules + skill into that repo
 #   --verify <dir>   -> checks an install against the lock it left behind
 # Every install writes .engineering-standards.sha256 next to what it copied (scripts/integrity.sh).
@@ -13,15 +14,20 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # the copied skill's files, relative to the directory the lock lives in
 skill_files() { (cd "$1" && find "$2" -type f ! -name .DS_Store | sed 's#^\./##' | LC_ALL=C sort); }
 
+install_skill() {
+  local dest="$1/skills/engineering-standards" locked=() f
+  mkdir -p "$(dirname "$dest")"
+  rm -rf "$dest"
+  cp -r "$ROOT/skills/engineering-standards" "$dest"
+  while IFS= read -r f; do locked+=("$f"); done < <(skill_files "$dest" .)
+  "$ROOT/scripts/integrity.sh" lock "$dest" "${locked[@]}"
+  echo "installed skill -> $dest"
+}
+
 if [ $# -eq 0 ]; then
-  DEST="${CLAUDE_HOME:-$HOME/.claude}/skills/engineering-standards"
-  mkdir -p "$(dirname "$DEST")"
-  rm -rf "$DEST"
-  cp -r "$ROOT/skills/engineering-standards" "$DEST"
-  locked=()
-  while IFS= read -r f; do locked+=("$f"); done < <(skill_files "$DEST" .)
-  "$ROOT/scripts/integrity.sh" lock "$DEST" "${locked[@]}"
-  echo "installed skill -> $DEST"
+  install_skill "${CLAUDE_HOME:-$HOME/.claude}"
+elif [ "$1" = --cursor ]; then
+  install_skill "${CURSOR_HOME:-$HOME/.cursor}"
 else
   TARGET="$1"
   [ -d "$TARGET" ] || { echo "no such directory: $TARGET" >&2; exit 1; }
